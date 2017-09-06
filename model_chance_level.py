@@ -5,19 +5,19 @@ import matplotlib.pyplot as plt
 import keras
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Flatten, Conv2D, MaxPooling2D
-
+from keras import losses
 import math
 
 from sklearn import utils
 import epfl_data 
 
 # load the EPFL Car Rotation dataset
-data = epfl_data.Data()
+data = epfl_data.Data(1,6)
 
-train_samples = data.samples[:1873, :]
+train_samples = data.samples[:1873]
 random.shuffle(train_samples)
 
-validation_samples = data.samples[1873:,:]
+validation_samples = data.samples[1873:]
 
 def generator(samples, batch_size=128):
     num_samples = len(samples)
@@ -37,7 +37,7 @@ def generator(samples, batch_size=128):
 
                 # scale the pose angle into [-0.5 0.5]
 
-                target = float(batch_sample[1])
+                target = float(batch_sample[1])/360.0 - 0.5
                 images.append(image)
                 targets.append(target)
 
@@ -76,13 +76,7 @@ model.add(Dense(20, activation='relu'))
 model.add(Dense(1))
 
 
-
-# Use Adam optimizer and mean circular Loss
-def circular_loss(y, y_pred):
-    loss = 180 - abs(abs(y_pred * 360 - y * 360) - 180)
-    return loss
-
-model.compile(optimizer="adam", loss=circular_loss)
+model.compile(optimizer="adam", loss=losses.cosine_proximity)
 # Train the model using the generator to feed training data
 model.fit_generator(train_generator, steps_per_epoch=
             len(train_samples), validation_data=validation_generator,

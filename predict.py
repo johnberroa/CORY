@@ -53,8 +53,8 @@ if __name__ == '__main__':
 
 
     # load the EPFL Car Rotation dataset
-    data = epfl_data.Data()
-    validation_samples = data.samples[1873:,:]
+    data = epfl_data.Data(1,6)
+    validation_samples = data.samples[1873:]
 
     images = []
     targets = []
@@ -67,9 +67,9 @@ if __name__ == '__main__':
         image = cv.cvtColor(image, cv.COLOR_BGR2RGB)
 
         # scale the pose angle into [-0.5 0.5]
-        #target = float(sample[1])/360.0 - 0.5
+        target = float(sample[1])/360.0 - 0.5
         #target = np.sin(np.radians(float(sample[1]) - 180.0))
-        target = float(sample[1])
+        #target = float(sample[1])
         images.append(image)
         targets.append(target)
 
@@ -94,11 +94,10 @@ if __name__ == '__main__':
     #print('Predicted angle: {} and true angle: {}'.format(pred_pose, true_pose))
     #pred_deg = (pred_pose.squeeze() + 0.5) * 360
     #true_deg = (y_validation + 0.5) * 360
-    pred_deg = pred_pose.squeeze()
-    true_deg = y_validation
+    pred_deg = (pred_pose.squeeze()+0.5)*360
+    true_deg = (y_validation+0.5)*360
     output = zip(pred_deg, true_deg) 
     plt.hist(pred_deg,30)
     plt.show()
     #avg_err = np.sum(180 - abs(abs(pred_deg - true_deg) - 180)) / len(true_deg)
-    #print('Average error in degree: {}'.format(avg_err))
     print('Predicted angle: {} '.format(np.asarray(output)))

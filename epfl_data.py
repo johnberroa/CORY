@@ -13,7 +13,7 @@ class Data:
             Object Orientation Estimation" paper
         """
         
-        info = open('tripod-seq/tripod-seq.txt', 'r')
+        info = open('data/tripod-seq.txt', 'r')
         data = info.readlines()
         self.width = 376
         self.height = 250
@@ -66,7 +66,7 @@ class Data:
         seq_ids = []
         for i, seq in enumerate(self.seq_indices):
             for pic in range(self.pics_per_seq[i]):
-                images.append('./tripod-seq/tripod_seq_{}_{}.jpg'.format(seq, _add_zeros(pic+1)))
+                images.append('./data/tripod_seq_{}_{}.jpg'.format(seq, _add_zeros(pic+1)))
 
             targets.append(self._generate_targets(i))
             labels.append(self._discretized_labels(targets[i]))
@@ -92,8 +92,6 @@ class Data:
         for seq in labels:
             for l in seq:
                 self.labels.append(l)
-                
-
 
         self.samples = [self.images, self.targets, self.labels, seq_ids]
         self.samples = zip(*self.samples)
@@ -102,7 +100,7 @@ class Data:
             wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
             wr.writerows(self.samples)
 
-        self.samples = np.asarray(self.samples)
+        #self.samples = np.asarray(self.samples)
         
     def _generate_targets(self, seq_i):
         """
@@ -115,7 +113,7 @@ class Data:
         frontal_facing_idx = self.seq_frontal_index[seq_i]
         
         # load times for this sequence
-        info = open('tripod-seq/times.txt', 'r')
+        info = open('data/times.txt', 'r')
         times = info.readlines()
         times = [int(x) for x in times[seq_i].split()]
         info.close()
