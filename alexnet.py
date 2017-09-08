@@ -149,13 +149,16 @@ def AlexNet(features, feature_extract=False):
     flat5 = tf.reshape(maxpool5, [-1, int(np.prod(maxpool5.get_shape()[1:]))])
     fc6 = tf.nn.relu(tf.matmul(flat5, fc6W) + fc6b)
 
+    if feature_extract:
+        return flat5
+
     # fc7, 4096
     fc7W = tf.Variable(net_data["fc7"][0])
     fc7b = tf.Variable(net_data["fc7"][1])
     fc7 = tf.nn.relu(tf.matmul(fc6, fc7W) + fc7b)
 
-    if feature_extract:
-        return fc7
+    #if feature_extract:
+    #    return fc7
 
     # fc8, 1000
     fc8W = tf.Variable(net_data["fc8"][0])
