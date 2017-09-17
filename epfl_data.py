@@ -137,25 +137,16 @@ class Data:
     def _discretized_labels(self, tgts):
         disc_targets = []
         within_Range = lambda x, hi, lo: True if hi > x >= lo else False
-
+        temp_bins = [(360 / self.bins) * b % 360 for b in range(self.bins)]  # generates bin end angles
+        temp_bins.append(360.0)  # adds 360 at the end to complete the circle
+        degree_swath = 360 / self.bins  # how much the targets will be rotated by per rotation
         for img in range(len(tgts)):
-            # print("IMG #:{} has TGT:{}".format(img, tgts[img]))
-            temp_disc_targets = np.zeros((self.rotations, self.bins))
-            temp_bins = []
+            temp_disc_targets = np.zeros((self.rotations, self.bins))  # each img gets a target array
             for rot in range(self.rotations):
-                temp = [(360 / self.bins * (b + rot / 2) % 360) for b in range(self.bins)]
-                temp.append(*[(360 + temp[-1] + 360 / self.bins) % 360 if (360 + temp[-1] + 360 / self.bins) % 360 != 0 else 360])
-                temp_bins.append(temp)
-                # print("TEMP BINS:", temp_bins, "\nROT:{}\n\n".format(rot))
-                # print("CURRENT DEBUG:", temp_bins[rot])
-                # print("CURRENT DEBUG2:", temp_bins[rot][0])
-                for i in range(len((temp_bins[rot][:-1]))):
-                    # print("BIN:",temp_bins[rot][i])
-                    # print("HI:{} LO:{} TGT:{}".format(temp_bins[rot][i], temp_bins[rot][i+1], tgts[img]))
-                    if within_Range(tgts[img], temp_bins[rot][i+1], temp_bins[rot][i]):
-                        # print("HIT")
-                        temp_disc_targets[rot,i] = 1
-                # print("TARGETS:", temp_disc_targets)
+                tgt = (tgts[img] - (rot * degree_swath)) % 360  # rotate targets back based on which rotation we are in
+                for i in range(len(temp_bins[:-1])):  # step through bins
+                    if within_Range(tgt, temp_bins[i+1], temp_bins[i]):  # if within bin, mark it
+                        temp_disc_targets[rot, i] = 1
             disc_targets.append(temp_disc_targets)
         return disc_targets
 
