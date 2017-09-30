@@ -8,7 +8,6 @@ from keras.layers import Dense, Dropout, Flatten, Conv2D, MaxPooling2D
 from keras.layers.convolutional import Convolution2D
 from keras import losses
 from keras import backend as K
-import training_checkpoints as note
 
 #from internet
 def cos_distance(y_true, y_pred):
@@ -19,7 +18,7 @@ def cos_distance(y_true, y_pred):
     y_pred = l2_normalize(y_pred, axis=-1)
     return K.mean(y_true * y_pred, axis=-1)
 
-note.depends_loaded()
+
 
 data = epfl_data.Data(1,6)
 
@@ -86,7 +85,7 @@ for i in range(len(test_tgts)):
 # print(training_tgts)
 # print(len(training_tgts))
 
-note.data_complete()
+
 
 model = Sequential()
 model.add(Convolution2D(16, (3, 3), activation='relu', input_shape=(height, width, 1)))
@@ -106,10 +105,10 @@ model.add(Dense(1))
 
 model.compile(optimizer="adam", loss=circular_loss)
 # Train the model using the generator to feed training data
-note.model_compiled()
+
 model.fit(training_images, np.asarray(training_tgts), batch_size=10, epochs=5, verbose=1)
 # score = model.evaluate(test_images[:-1], np.asarray(test_tgts), verbose=1)
-note.all_complete()
+
 # print("SCORE:",score)
 
 # doesnt work for some reason , dont know why
