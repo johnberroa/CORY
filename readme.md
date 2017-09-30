@@ -2,7 +2,7 @@
 
 "**C**ar **Ori**entation Convolutional Network"
 
-A convolutional neural network aimed at determining the compass direction of cars in their natural habitat, the street.
+A convolutional neural network aimed at determining the compass direction of cars.
 
 Future plans are to detect cars and to determine driving direction on roads.
 
@@ -16,5 +16,10 @@ Labels were not provided, and so they were calculated by looking at the picture 
 - 20 image sequences
 #### Notes:
 - Labels are sometimes within 1-2° of true label since times were truncated to whole seconds.
-### KITTI
-#### More to come...
+
+## Networks
+
+* Transfer Learning on AlexNet
+* Histogram of Oriented Gradients Feedforward Network
+
+Both networks learn car pose angles via a discretization and probability distribution approach according to Hara, Vemulapalli, and Chellappa (2017).
