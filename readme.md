@@ -19,7 +19,7 @@ Labels were not provided, and so they were calculated by looking at the picture 
 
 ## Networks
 
-* Transfer Learning on AlexNet
+* Transfer Learning on [AlexNet](www.cs.toronto.edu/~guerzhoy/tf_alexnet/bvlc_alexnet.npy)
 * Histogram of Oriented Gradients Feedforward Network
 
 Both networks learn car pose angles via a discretization and probability distribution approach according to Hara, Vemulapalli, and Chellappa (2017).
