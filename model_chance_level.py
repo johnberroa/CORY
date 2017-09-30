@@ -6,6 +6,7 @@ import keras
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Flatten, Conv2D, MaxPooling2D
 from keras import losses
+from keras import backend as K
 import math
 
 from sklearn import utils
@@ -18,6 +19,12 @@ train_samples = data.samples[:1873]
 random.shuffle(train_samples)
 
 validation_samples = data.samples[1873:]
+
+def circ_mean_squared_error(y_true,y_pred):
+    deg_true = (y_true + 0.5) * 360
+    deg_pred = (y_pred + 0.5) * 360
+    loss = (180 - K.abs(K.abs(deg_pred - deg_true) - 180)) / 360
+    return K.mean(K.cast(loss, K.floatx()))
 
 def generator(samples, batch_size=128):
     num_samples = len(samples)
@@ -76,16 +83,16 @@ model.add(Dense(20, activation='relu'))
 model.add(Dense(1))
 
 
-model.compile(optimizer="adam", loss=losses.cosine_proximity)
+model.compile(optimizer="adam", loss=circ_mean_squared_error)
 # Train the model using the generator to feed training data
 model.fit_generator(train_generator, steps_per_epoch=
             len(train_samples), validation_data=validation_generator,
-            validation_steps=len(validation_samples), epochs=1)
+            validation_steps=len(validation_samples), epochs=3)
 
 evalu = model.evaluate_generator(validation_generator, 10)
 
 print(model.metrics_names)
-print('Avg error on validation data in degrees: {}'.format(evalu))
+print('Avg error on validation data : {}'.format(evalu))
 
 # doesnt work for some reason , dont know why
 #pred = model.predict_generator(validation_generator, 10)

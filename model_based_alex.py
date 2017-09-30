@@ -5,9 +5,12 @@ from sklearn.utils import shuffle
 import random
 import cv2 as cv
 import numpy as np
+import math
+from matplotlib import pyplot as plt
 
 from alexnet import AlexNet
 import epfl_data 
+from vonmiseskde import VonMisesKDE
 
 tf.logging.set_verbosity(tf.logging.INFO)
 
@@ -19,9 +22,9 @@ def flip_angle(angle):
     else:
         return 360-angle
 
-nb_rotations = 3
-nb_classes = 6
-epochs = 200
+nb_rotations = 2
+nb_classes = 8
+epochs = 5
 batch_size = 32
 
 # load the EPFL Car Rotation dataset
@@ -106,18 +109,22 @@ for i in range(nb_rotations):
     orientation_b.append(tf.Variable(tf.zeros(nb_classes)))
 
 logits = []
+softmaxes = []
 mse = []
 for i in range(nb_rotations):
     logit = tf.nn.xw_plus_b(maxpool5, orientation_W[i], orientation_b[i])
     logits.append(logit)
+    softmaxes.append(tf.nn.softmax(logit))
     mse.append(tf.losses.sparse_softmax_cross_entropy(labels=labels[i], logits=logit))
 
 loss_op = tf.reduce_mean(np.sum(mse))
 
+predictions = []
 matches = []
 accuracies = []
 for i in range(nb_rotations):
-    matches.append(tf.equal(tf.argmax(tf.nn.softmax(logits[i]),1), labels[i]))
+    predictions.append(tf.argmax(tf.nn.softmax(logits[i]),1))
+    matches.append(tf.equal(predictions[i], labels[i]))
     accuracies.append(tf.reduce_mean(tf.cast(matches[i], tf.float32)))
 
 # set learning rate to decrease by a factor of 10 after 2000 iterations
@@ -133,7 +140,9 @@ init_op = tf.global_variables_initializer()
 
 def eval_on_data(X, y, sess):
     total_acc = np.zeros((nb_rotations))
-
+    all_pred = []
+    all_lab = []
+    all_softmax = []
     total_loss = 0
     for offset in range(0, X.shape[0], batch_size):
         end = offset + batch_size
@@ -147,11 +156,17 @@ def eval_on_data(X, y, sess):
 
         feed_dict={i: d for i, d in zip(labels, las)}
         feed_dict[features] = X_batch
-        acc, loss = sess.run([accuracies, loss_op], feed_dict=feed_dict)
-        total_loss += (loss * X_batch.shape[0])
-        total_acc[i] += (acc[i] * X_batch.shape[0])
+        softm, pred, lab, acc, loss = sess.run([softmaxes, predictions, labels, accuracies, loss_op], feed_dict=feed_dict)
+        all_pred.append(pred)
+        all_lab.append(lab)
 
-    return total_loss/X.shape[0], total_acc/X.shape[0]
+        all_softmax.append(softm)
+
+        total_loss += (loss * X_batch.shape[0])
+        for i in range(nb_rotations):
+            total_acc[i] += (acc[i] * X_batch.shape[0])
+
+    return all_softmax, all_pred, all_lab, total_loss/X.shape[0], total_acc/X.shape[0]
 
 with tf.Session() as sess:
     sess.run(init_op)
@@ -174,8 +189,64 @@ with tf.Session() as sess:
             feed_dict[features] = X_train[offset:end]        
             sess.run(train_op, feed_dict=feed_dict)
 
-        val_loss, acc = eval_on_data(X_val, y_val, sess)
-        print("Epoch", i+1)
+        softm, pred, lab, val_loss, acc = eval_on_data(X_val, y_val, sess)
+        print("Epoch {}".format(i+1))
         print("Time: %.3f seconds" % (time.time() - t0))
         print("Validation Loss = {}".format(val_loss))
         print("Accuracies = {}".format(acc))
+        
+        flat_softm = [item for sublist in softm for item in sublist] 
+        flat_softm = np.concatenate(flat_softm)#.ravel()
+        flat_softm = flat_softm.reshape((-1,nb_rotations*nb_classes))
+
+        ### prints to examine classification results ###
+        #flat_lab = [item for sublist in lab for item in sublist] 
+        #flat_lab = np.concatenate(flat_lab).ravel()
+        #print(flat_lab)
+        #flat_pred = [item for sublist in pred for item in sublist] 
+        #flat_pred = np.concatenate(flat_pred).ravel()
+        #print(np.transpose(np.vstack((flat_lab,flat_pred))))
+        #num_hits = np.sum(np.equal(flat_pred,flat_lab))
+        #print("{} von {} richtig".format(num_hits,len(flat_pred)))
+        #print(np.asarray(lab).flatten(), np.asarray(pred).flatten())
+
+discrete_orientations = data.binnies[1873:]
+
+results = np.zeros((len(discrete_orientations),2))
+
+# Kernel density estimator
+kappa = 10
+for i in range(len(flat_softm)):
+    kde = VonMisesKDE(np.deg2rad(discrete_orientations[i]), weights=flat_softm[i], kappa=kappa)
+
+    # Input for test points
+    test_x = np.linspace(0, 2*math.pi, 720)
+
+    # Display posterior estimate
+    plt.plot(test_x, kde.evaluate(test_x), zorder=20)
+    plt.title('von Mises density for a sample image')
+    maxi = np.argmax(kde.evaluate(test_x))
+    #print("Radians: {}, Degree: {}, True Deg: {}".format(test_x[maxi], np.rad2deg(test_x[maxi]), data.samples[1873+i][1]))
+    results[i,0] = np.rad2deg(test_x[maxi])
+    results[i,1] = data.samples[1873+i][1]
+    plt.xlabel("Orientation")
+    plt.xlim(0, 2*math.pi)
+    plt.ylim(0, 1)
+    plt.show()
+
+def circular_loss(y, y_pred):
+    loss = 180 - np.absolute(np.absolute(y_pred - y) - 180)
+    return loss
+
+print(results)
+
+error = circular_loss(results[:,1], results[:,0])
+
+plt.hist(error, 30)
+plt.title("Distribution of Error")
+plt.xlabel("Error Magnitude")
+plt.ylabel("Frequency")
+plt.show()
+
+print("Mean error: {}".format(np.mean(error)))
+print("Median error: {}".format(np.median(error)))

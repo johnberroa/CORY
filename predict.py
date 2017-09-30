@@ -21,24 +21,16 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     import keras.backend as K
-    def angle_difference(x, y):
-        """
-        Calculate minimum difference between two angles.
-        """
-        return 180 - abs(abs(x - y) - 180)
 
-    def angle_error(y_true, y_pred):
-        """
-        Calculate the mean diference between the true angles
-        and the predicted angles. Each angle is represented
-        as a binary vector.
-        """
-        diff = angle_difference(K.argmax(y_true), K.argmax(y_pred))
-        return K.mean(K.cast(K.abs(diff), K.floatx()))
+    def circ_mean_squared_error(y_true,y_pred):
+        deg_true = (y_true + 0.5) * 360
+        deg_pred = (y_pred + 0.5) * 360
+        loss = (180 - K.abs(K.abs(deg_pred - deg_true) - 180)) / 360
+        return K.mean(K.cast(loss, K.floatx()))
 
     import keras.losses
 
-    keras.losses.angle_error = angle_error
+    keras.losses.circ_mean_squared_error = circ_mean_squared_error
 
     # check that model Keras version is same as local Keras version
     f = h5py.File(args.model, mode='r')
@@ -50,7 +42,6 @@ if __name__ == '__main__':
               ', but the model was built using ', model_version)
 
     model = load_model(args.model)
-
 
     # load the EPFL Car Rotation dataset
     data = epfl_data.Data(1,6)
@@ -79,7 +70,7 @@ if __name__ == '__main__':
 
     #### This is just a very simple hard coded example and should be extended ###
 
-    #ame = './test_images/testa.jpg'
+    #name = './test_images/testa.jpg'
     # this is looked up in epfl_targets.csv
     #true_pose = 142.5
     #image = cv.imread(name)
@@ -87,17 +78,11 @@ if __name__ == '__main__':
     #image = cv.cvtColor(image, cv.COLOR_BGR2RGB)
 
     pred_pose = model.predict(X_validation, batch_size=10)
-    #print(pred_pose.squeeze().shape)
 
     # recover to degree space
-    #pred_pose = (pred_pose + 0.5) * 360
-    #print('Predicted angle: {} and true angle: {}'.format(pred_pose, true_pose))
-    #pred_deg = (pred_pose.squeeze() + 0.5) * 360
-    #true_deg = (y_validation + 0.5) * 360
     pred_deg = (pred_pose.squeeze()+0.5)*360
     true_deg = (y_validation+0.5)*360
     output = zip(pred_deg, true_deg) 
     plt.hist(pred_deg,30)
     plt.show()
-    #avg_err = np.sum(180 - abs(abs(pred_deg - true_deg) - 180)) / len(true_deg)
     print('Predicted angle: {} '.format(np.asarray(output)))

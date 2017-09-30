@@ -33,6 +33,7 @@ class Data:
         self.rotations = rotations
         self.bins = bins
         self.labels = []
+        self.binnies = []
 
 
         self._load_imgs()
@@ -64,12 +65,15 @@ class Data:
         targets = []
         labels = []
         seq_ids = []
+        binnies = []
         for i, seq in enumerate(self.seq_indices):
             for pic in range(self.pics_per_seq[i]):
                 images.append('./data/tripod_seq_{}_{}.jpg'.format(seq, _add_zeros(pic+1)))
 
             targets.append(self._generate_targets(i))
-            labels.append(self._discretized_labels(targets[i]))
+            one, two = self._discretized_labels(targets[i])
+            labels.append(one)
+            binnies.append(two)
             image_seq.append(images)
             images = []
 
@@ -93,8 +97,12 @@ class Data:
             for l in seq:
                 self.labels.append(l)
 
-        self.samples = [self.images, self.targets, self.labels, seq_ids]
-        # self.samples = zip(*self.samples)
+        for b in binnies:
+            for bb in b:
+                self.binnies.append(bb)
+
+        self.samples = [self.images, self.targets, self.labels, self.binnies, seq_ids]
+        #self.samples = zip(*self.samples)
 
         with open('epfl_targets.csv', 'w') as myfile:
             wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
@@ -139,16 +147,25 @@ class Data:
         within_Range = lambda x, hi, lo: True if hi > x >= lo else False
         temp_bins = [(360 / self.bins) * b % 360 for b in range(self.bins)]  # generates bin end angles
         temp_bins.append(360.0)  # adds 360 at the end to complete the circle
-        degree_swath = 360 / self.bins  # how much the targets will be rotated by per rotation
+        degree_swath = 360 / self.bins / self.rotations  # how much the targets will be rotated by per rotation
+        bin_angles = []
         for img in range(len(tgts)):
             temp_disc_targets = np.zeros((self.rotations, self.bins))  # each img gets a target array
             for rot in range(self.rotations):
+                printable_bins = [(b+20*rot)%360 for b in temp_bins]
+                bin_angles.append(printable_bins[:-1])
                 tgt = (tgts[img] - (rot * degree_swath)) % 360  # rotate targets back based on which rotation we are in
                 for i in range(len(temp_bins[:-1])):  # step through bins
                     if within_Range(tgt, temp_bins[i+1], temp_bins[i]):  # if within bin, mark it
                         temp_disc_targets[rot, i] = 1
             disc_targets.append(temp_disc_targets)
-        return disc_targets
+        bin_angles = np.asarray(bin_angles)
+        #print(bin_angles.shape)
+        bin_angles = bin_angles.reshape((-1,self.rotations*self.bins))
+        #print(bin_angles.shape)
+        return disc_targets, bin_angles
 
 if __name__ == '__main__':
-    data = Data(2,4)
+    data = Data(3,6)
+    # for i in range(100):
+    #     print(data.samples[2][i],'\n')

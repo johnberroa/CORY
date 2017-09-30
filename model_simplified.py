@@ -35,7 +35,7 @@ for d in range(len(data.samples[0])):
 ########LOSSES##########
 def MAE(y_true, y_pred):
     # from Ghodrati 2014
-    return -K.minimum(K.abs(y_pred-y_true), (2*np.pi)-(K.abs(y_pred-y_true)))
+    return K.minimum(K.abs(y_pred-y_true), (2*np.pi)-(K.abs(y_pred-y_true)))
 
 def circular_loss(y, y_pred):
     loss = 180 - K.abs(K.abs(y_pred - y) - 180)
@@ -74,7 +74,7 @@ model.add(Dense(20, activation='relu'))
 model.add(Dense(1))
 
 
-model.compile(optimizer="adam", loss=losses.cosine)
+model.compile(optimizer="adam", loss=MAE)
 
 model.fit(training_images, np.asarray(training_tgts), batch_size=10, epochs=5, verbose=1)
 
@@ -94,4 +94,5 @@ print(predictions[1])
 print(test_tgts[200])
 predictions.append(model.predict(np.expand_dims(test_images[200],axis=0), batch_size=1, verbose=1))
 print(predictions[2])
+print(model.predict(np.expand_dims(test_images, axis=0)))
 # print(MAE(test_tgts[2],predictions[0]), MAE(test_tgts[20],predictions[1]), MAE(test_tgts[200],predictions[2]))

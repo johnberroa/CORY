@@ -73,7 +73,7 @@ class Data:
             targets.append(self._generate_targets(i))
             one, two = self._discretized_labels(targets[i])
             labels.append(one)
-            binnes.append(two)
+            binnies.append(two)
             image_seq.append(images)
             images = []
 
@@ -160,9 +160,9 @@ class Data:
                         temp_disc_targets[rot, i] = 1
             disc_targets.append(temp_disc_targets)
         bin_angles = np.asarray(bin_angles)
-        print(bin_angles.shape)
+        #print(bin_angles.shape)
         bin_angles = bin_angles.reshape((-1,self.rotations*self.bins))
-        print(bin_angles.shape)
+        #print(bin_angles.shape)
         return disc_targets, bin_angles
 
 if __name__ == '__main__':
