@@ -4,7 +4,7 @@
 
 A convolutional neural network aimed at determining the compass direction of cars.
 
-Future plans are to detect cars and to determine driving direction on roads.
+Use cases are to detect cars and to determine driving direction on roads.
 
 ## Datasets
 
