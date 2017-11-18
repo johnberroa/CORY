@@ -1,7 +1,6 @@
 *pyc
 *.npy
 *.h5
-*.pdf
 data/*
 env/*
 *~
